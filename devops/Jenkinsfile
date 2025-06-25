@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        TF_DIR = "terraform"
-        ANSIBLE_DIR = "ansible"
-        DOCKER_DIR = "docker"
+        TF_DIR = "devops/terraform"
+        ANSIBLE_DIR = "devops/ansible"
+        DOCKER_DIR = "devops/docker"
     }
 
     stages {
