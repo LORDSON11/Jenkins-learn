@@ -1,7 +1,11 @@
 provider "aws" {
-  region                  = "ap-south-1"
-  access_key              = var.aws_access_key
-  secret_key              = var.aws_secret_key
+  region     = "ap-south-1"
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
+}
+
+variable "public_key_path" {
+  default = "/var/lib/jenkins/.ssh/id_rsa.pub"
 }
 
 resource "aws_key_pair" "jenkins_key" {
@@ -35,13 +39,13 @@ resource "aws_security_group" "allow_web_ssh" {
   }
 }
 
-resource "aws_instance" "jenkins_server" {
-  ami                    = "ami-0c768662cc797cd75"
-  instance_type          = "t2.micro"
-  key_name               = aws_key_pair.jenkins_key.key_name
-  vpc_security_group_ids = [aws_security_group.allow_web_ssh.id]
+resource "aws_instance" "web" {
+  ami                         = "ami-0c768662cc797cd75" # Amazon Linux 2 (ap-south-1)
+  instance_type               = "t2.micro"
+  key_name                    = aws_key_pair.jenkins_key.key_name
+  vpc_security_group_ids      = [aws_security_group.allow_web_ssh.id]
 
   tags = {
-    Name = "JenkinsDeployInstance"
+    Name = "Jenkins-Deployed-Instance"
   }
 }

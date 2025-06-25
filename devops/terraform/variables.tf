@@ -1,12 +1,2 @@
-variable "aws_access_key" {
-  type = string
-}
-
-variable "aws_secret_key" {
-  type = string
-}
-
-variable "public_key_path" {
-  type = string
-  default = "~/.ssh/id_rsa.pub"
-}
+variable "aws_access_key" {}
+variable "aws_secret_key" {}
