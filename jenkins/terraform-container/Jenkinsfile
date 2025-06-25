@@ -1,0 +1,33 @@
+pipeline {
+    agent any
+    environment {
+        AWS_ACCESS_KEY_ID     = credentials('aws-access-key')  // credentialsId in Jenkins
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+    }
+    stages {
+        stage('Terraform Init & Apply') {
+            steps {
+                dir('infra') {
+                    sh '''
+                        terraform init
+                        terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                dir('app') {
+                    sh 'docker build -t myapp:latest .'
+                }
+            }
+        }
+        stage('Deploy to EC2') {
+            steps {
+                dir('scripts') {
+                    sh 'chmod +x deploy.sh && ./deploy.sh'
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,18 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clone') {
+            steps {
+                git branch: 'main', url: 'https://github.com/LORDSON11/learn-jenkins.git'
+                echo 'Cloned repository!'
+            }
+        }
+
+        stage('Show Commit') {
+            steps {
+                sh 'git log -1 --pretty=format:"%h - %an - %s"'
+            }
+        }
+    }
+}

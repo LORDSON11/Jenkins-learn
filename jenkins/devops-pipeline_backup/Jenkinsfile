@@ -1,0 +1,35 @@
+pipeline {
+  agent any
+
+ environment {
+  TF_VAR_private_key = credentials('node-key')
+  AWS_ACCESS_KEY_ID = credentials('aws-access-key')
+  AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+}
+
+
+  stages {
+    stage('Clone Code') {
+      steps {
+        git branch: 'main', url: 'https://github.com/LORDSON11/learn-jenkins.git'
+      }
+    }
+
+    stage('Terraform Init & Apply') {
+      steps {
+        dir('devops-pipeline/terraform') {
+          sh 'terraform init'
+          sh 'terraform apply -auto-approve'
+        }
+      }
+    }
+
+    stage('Ansible Deploy') {
+      steps {
+        dir('devops-pipeline/ansible') {
+          sh 'ansible-playbook -i inventory.ini playbook.yml'
+        }
+      }
+    }
+  }
+}

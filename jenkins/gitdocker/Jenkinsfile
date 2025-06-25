@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    environment {
+        TF_DIR = 'gitdocker/terraform'
+        APP_DIR = 'gitdocker/app'
+    }
+
+    stages {
+        stage('Clone Repo') {
+            steps {
+                git url: 'https://github.com/LORDSON11/learn-jenkins.git', branch: 'main'
+            }
+        }
+
+        stage('Terraform Init & Apply') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform init'
+                    withCredentials([file(credentialsId: 'node-key', variable: 'KEYFILE')]) {
+                        withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                            sh '''
+                                chmod 600 $KEYFILE
+                                export TF_VAR_private_key="$(cat $KEYFILE)"
+                                terraform apply -auto-approve
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir("${APP_DIR}") {
+                    sh 'docker build -t ci-app .'
+                }
+            }
+        }
+
+        stage('Deploy on EC2') {
+            steps {
+                script {
+                    def public_ip = sh(script: "terraform -chdir=${TF_DIR} output -raw instance_ip", returnStdout: true).trim()
+                    sh """
+                        scp -i ~/.ssh/key.pem ${APP_DIR}/Dockerfile ${APP_DIR}/app.py ubuntu@${public_ip}:/home/ubuntu/
+                        ssh -i ~/.ssh/key.pem ubuntu@${public_ip} 'docker build -t ci-app /home/ubuntu && docker run -d -p 5000:5000 ci-app'
+                    """
+                }
+            }
+        }
+
+        stage('Validate App') {
+            steps {
+                script {
+                    def public_ip = sh(script: "terraform -chdir=${TF_DIR} output -raw instance_ip", returnStdout: true).trim()
+                    sh "curl http://${public_ip}:5000"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution complete.'
+        }
+    }
+}

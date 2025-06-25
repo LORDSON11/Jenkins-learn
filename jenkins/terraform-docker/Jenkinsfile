@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "lordson19/terraform-docker"
+        TAG = "latest"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/LORDSON11/learn-jenkins.git', branch: 'main'
+            }
+        }
+
+        stage('Terraform Init & Apply') {
+            steps {
+                withCredentials([file(credentialsId: 'node-key', variable: 'NODE_PEM')]) {
+                    dir('terraform-docker/terraform') {
+                        withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                            sh '''
+                                TMP_SSH_DIR="$WORKSPACE/terraform-docker/tmp_ssh"
+                                mkdir -p "$TMP_SSH_DIR"
+                                cp "$NODE_PEM" "$TMP_SSH_DIR/node.pem"
+                                chmod 400 "$TMP_SSH_DIR/node.pem"
+                                export TF_VAR_private_key_path="$TMP_SSH_DIR/node.pem"
+                                terraform init
+                                terraform apply -auto-approve
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('terraform-docker') {
+                    sh 'docker build -t $IMAGE_NAME:$TAG .'
+                }
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh '''
+                        echo "$PASS" | docker login -u "$USER" --password-stdin
+                        docker push $IMAGE_NAME:$TAG
+                    '''
+                }
+            }
+        }
+    }
+}

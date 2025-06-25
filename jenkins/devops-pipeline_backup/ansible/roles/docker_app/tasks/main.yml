@@ -1,0 +1,20 @@
+---
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+
+- name: Start Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Copy app.py
+  copy:
+    src: app.py
+    dest: /home/ubuntu/app.py
+
+- name: Run Docker container
+  shell: docker run -d -p 5000:5000 -v /home/ubuntu/app.py:/app/app.py python:3 bash -c "pip install flask && python /app/app.py"

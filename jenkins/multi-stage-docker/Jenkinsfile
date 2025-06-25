@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "lordson19/multistage-app"
+        TAG = "latest"
+        BUILD_CONTEXT = "multi-stage-docker"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/LORDSON11/learn-jenkins.git', branch: 'main'
+            }
+        }
+
+        stage('Build Stage 1 Only (builder)') {
+            steps {
+                echo "🛠 Building only builder stage..."
+                sh "docker build --target builder -t ${IMAGE_NAME}:builder ${BUILD_CONTEXT}"
+            }
+        }
+
+        stage('Build Full Image') {
+            steps {
+                echo "🐳 Building full image..."
+                sh "docker build -t ${IMAGE_NAME}:${TAG} ${BUILD_CONTEXT}"
+            }
+        }
+    }
+}

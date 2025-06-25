@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+        TF_DIR = "devops-end-pipeline/terraform"
+        ANSIBLE_DIR = "devops-end-pipeline/ansible"
+        DOCKER_DIR = "devops-end-pipeline/docker"
+    }
+
+    stages {
+        stage('Clone Repo') {
+            steps {
+                git 'https://github.com/LORDSON11/learn-jenkins.git'
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Generate Inventory') {
+            steps {
+                sh 'bash generate_inventory.sh'
+            }
+        }
+
+        stage('Install Docker via Ansible') {
+            steps {
+                sh '''
+                ansible-playbook -i ${ANSIBLE_DIR}/dynamic_inventory.ini ${ANSIBLE_DIR}/install_docker.yml
+                '''
+            }
+        }
+
+        stage('Run Docker App') {
+            steps {
+                sh '''
+                IP=$(terraform -chdir=${TF_DIR} output -raw public_ip)
+                scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${DOCKER_DIR}/* ec2-user@$IP:/home/ec2-user/
+                ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$IP "docker build -t myapp . && docker run -d -p 80:80 myapp"
+                '''
+            }
+        }
+
+        stage('Verify App') {
+            steps {
+                sh '''
+                IP=$(terraform -chdir=${TF_DIR} output -raw public_ip)
+                sleep 10
+                curl http://$IP
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline finished"
+        }
+    }
+}

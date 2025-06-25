@@ -1,0 +1,26 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/LORDSON11/learn-jenkins.git']]
+                ])
+            }
+        }
+
+        stage('Generate Git Log') {
+            steps {
+                sh 'git log > gitlog.txt'
+            }
+        }
+
+        stage('Archive Log File') {
+            steps {
+                archiveArtifacts artifacts: 'gitlog.txt', onlyIfSuccessful: true
+            }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+pipeline {
+    agent {
+        docker {
+            image 'hashicorp/terraform:latest'
+            args '-v $WORKSPACE:/workspace -w /workspace --entrypoint=""'
+        }
+    }
+    environment {
+        TF_IN_AUTOMATION = 'true'
+    }
+    stages {
+        stage('Terraform Init & Apply') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
+                    sh '''
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+
+                        terraform init
+                        terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
+    }
+}
