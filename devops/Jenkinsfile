@@ -10,7 +10,8 @@ pipeline {
     stages {
         stage('Clone Repo') {
             steps {
-                git 'https://github.com/LORDSON11/Jenkins-learn.git'
+               git branch: 'main', url: 'https://github.com/LORDSON11/Jenkins-learn.git'
+
             }
         }
 
