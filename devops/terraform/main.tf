@@ -4,14 +4,11 @@ provider "aws" {
   secret_key = var.aws_secret_key
 }
 
-variable "public_key_path" {
-  default = "/var/lib/jenkins/.ssh/id_rsa.pub"
-}
-
 resource "aws_key_pair" "jenkins_key" {
   key_name   = "jenkins-key"
-  public_key = file(var.public_key_path)
+  public_key = file("/var/lib/jenkins/.ssh/id_rsa.pub")
 }
+
 
 resource "aws_security_group" "allow_web_ssh" {
   name        = "web-ssh"
