@@ -10,6 +10,7 @@ resource "aws_key_pair" "jenkins_key" {
 }
 
 
+
 resource "aws_security_group" "allow_web_ssh" {
   name        = "web-ssh"
   description = "Allow SSH and HTTP"
