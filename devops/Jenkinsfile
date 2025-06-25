@@ -51,7 +51,7 @@ pipeline {
             }
         }
 
-      stage('Run Docker App') {
+stage('Run Docker App') {
     steps {
         withCredentials([
             sshUserPrivateKey(
@@ -66,16 +66,15 @@ pipeline {
 
                 scp -o StrictHostKeyChecking=no -i $SSH_KEY ${DOCKER_DIR}/* ${SSH_USER}@$IP:/home/${SSH_USER}/
 
-                ssh -o StrictHostKeyChecking=no -i $SSH_KEY ${SSH_USER}@$IP bash -s << 'ENDSSH'
-                    cd /home/${SSH_USER}
-                    docker build -t myapp .
-                    docker run -d -p ${APP_PORT}:80 myapp
-                ENDSSH
+                ssh -o StrictHostKeyChecking=no -i $SSH_KEY ${SSH_USER}@$IP bash -s << ENDSSH
+cd /home/${SSH_USER}
+docker build -t myapp .
+docker run -d -p ${APP_PORT}:80 myapp
+ENDSSH
             '''
         }
     }
 }
-
 
         stage('Verify App') {
             steps {
