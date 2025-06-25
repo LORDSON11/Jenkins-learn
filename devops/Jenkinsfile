@@ -2,16 +2,15 @@ pipeline {
     agent any
 
     environment {
-        TF_DIR = "devops-end-pipeline/terraform"
-        ANSIBLE_DIR = "devops-end-pipeline/ansible"
-        DOCKER_DIR = "devops-end-pipeline/docker"
+        TF_DIR = "terraform"
+        ANSIBLE_DIR = "ansible"
+        DOCKER_DIR = "docker"
     }
 
     stages {
         stage('Clone Repo') {
             steps {
-               git branch: 'main', url: 'https://github.com/LORDSON11/Jenkins-learn.git'
-
+                git branch: 'main', url: 'https://github.com/LORDSON11/Jenkins-learn.git'
             }
         }
 
