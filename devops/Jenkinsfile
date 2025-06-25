@@ -25,7 +25,8 @@ pipeline {
 
         stage('Generate Inventory') {
             steps {
-                sh 'bash generate_inventory.sh'
+                 sh "./devops/generate_inventory.sh"
+
             }
         }
 
