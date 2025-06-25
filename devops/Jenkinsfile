@@ -8,25 +8,33 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repo') {
+        stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/LORDSON11/Jenkins-learn.git'
             }
         }
 
-        stage('Terraform Apply') {
+        stage('Terraform Init & Apply') {
             steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform init'
-                    sh 'terraform apply -auto-approve'
+                withCredentials([
+                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY'),
+                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_KEY')
+                ]) {
+                    dir("${TF_DIR}") {
+                        sh '''
+                        terraform init
+                        terraform apply -auto-approve \
+                          -var="aws_access_key=$AWS_ACCESS_KEY" \
+                          -var="aws_secret_key=$AWS_SECRET_KEY"
+                        '''
+                    }
                 }
             }
         }
 
         stage('Generate Inventory') {
             steps {
-                 sh "./devops/generate_inventory.sh"
-
+                sh 'chmod +x devops/generate_inventory.sh && ./devops/generate_inventory.sh'
             }
         }
 
@@ -40,11 +48,13 @@ pipeline {
 
         stage('Run Docker App') {
             steps {
-                sh '''
-                IP=$(terraform -chdir=${TF_DIR} output -raw public_ip)
-                scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${DOCKER_DIR}/* ec2-user@$IP:/home/ec2-user/
-                ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$IP "docker build -t myapp . && docker run -d -p 80:80 myapp"
-                '''
+                withCredentials([file(credentialsId: 'node-key', variable: 'SSH_KEY')]) {
+                    sh '''
+                    IP=$(terraform -chdir=${TF_DIR} output -raw public_ip)
+                    scp -o StrictHostKeyChecking=no -i $SSH_KEY ${DOCKER_DIR}/* ec2-user@$IP:/home/ec2-user/
+                    ssh -o StrictHostKeyChecking=no -i $SSH_KEY ec2-user@$IP "docker build -t myapp . && docker run -d -p 80:80 myapp"
+                    '''
+                }
             }
         }
 
@@ -61,7 +71,7 @@ pipeline {
 
     post {
         always {
-            echo "Pipeline finished"
+            echo "Pipeline Finished"
         }
     }
 }
